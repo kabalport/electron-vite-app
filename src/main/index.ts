@@ -1,7 +1,10 @@
-import { app, shell, BrowserWindow } from 'electron'
+const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+
+import { captureGoogleSearch } from '.././renderer/src/utils/path-to-playwright-script';
+
 
 function createWindow(): void {
   // Create the browser window.
@@ -57,6 +60,26 @@ app.whenReady().then(() => {
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  ipcMain.on('test-alarm', (event) => {
+    dialog.showMessageBox({
+      type: 'info',
+      title: '알람 테스트',
+      message: '이것은 알람 테스트입니다.',
+      buttons: ['확인']
+    });
+  });
+
+  ipcMain.handle('capture-request', async (event, searchQuery) => {
+    try {
+      const result = await captureGoogleSearch(searchQuery);
+      return `Capture completed: ${result}`;
+    } catch (error) {
+      console.error('Capture error:', error);
+      return `Error: ${error.message}`;
+    }
+  });
 })
 
 // Quit when all windows are closed, except on macOS. There, it's common
