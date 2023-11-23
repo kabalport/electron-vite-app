@@ -53,6 +53,18 @@ function MainPage(): JSX.Element {
             variant="contained"
             color="secondary"
             fullWidth
+            onClick={() => navigate('/googleLogin')}
+          >
+            구글로그인이동
+          </Button>
+        </Paper>
+      </Grid>
+      <Grid item xs={12} sm={6} md={4} lg={3} xl={2}>
+        <Paper elevation={4} style={{ padding: 16 }}>
+          <Button
+            variant="contained"
+            color="secondary"
+            fullWidth
             onClick={() => navigate('/calculator')}
           >
             계산기앱으로 이동

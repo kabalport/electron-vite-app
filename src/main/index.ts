@@ -1,3 +1,5 @@
+import {googleLogin} from "../renderer/src/utils/googleLogin";
+
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -69,6 +71,15 @@ app.whenReady().then(() => {
       message: '이것은 알람 테스트입니다.',
       buttons: ['확인']
     });
+  });
+// 메인 프로세스에서
+  ipcMain.handle('google-login', async (event, email, password) => {
+    try {
+      const result = await googleLogin(email, password);
+      return result;
+    } catch (error) {
+      console.error(error);
+    }
   });
 
   ipcMain.handle('capture-request', async (event, searchQuery) => {
