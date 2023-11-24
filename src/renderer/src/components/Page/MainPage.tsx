@@ -53,9 +53,9 @@ function MainPage(): JSX.Element {
             variant="contained"
             color="secondary"
             fullWidth
-            onClick={() => navigate('/googleLogin')}
+            onClick={() => navigate('/monitoring')}
           >
-            구글로그인이동
+            monitoring
           </Button>
         </Paper>
       </Grid>

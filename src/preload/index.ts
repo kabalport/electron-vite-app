@@ -1,6 +1,7 @@
-import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
-
+// Import the necessary Electron modules
+const contextBridge = require('electron').contextBridge;
+const ipcRenderer = require('electron').ipcRenderer;
 
 
 
@@ -14,6 +15,14 @@ if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
+    contextBridge.exposeInMainWorld(
+      // Allowed 'ipcRenderer' methods
+      'bridge', {
+        // From main to render
+        updateNumber: (message) => {
+          ipcRenderer.on('updateNumber', message);
+        }
+      });
   } catch (error) {
     console.error(error)
   }

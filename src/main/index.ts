@@ -1,14 +1,15 @@
-import {googleLogin} from "../renderer/src/utils/googleLogin";
-
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron');
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
 import { captureGoogleSearch } from '.././renderer/src/utils/path-to-playwright-script';
+const activeWindow = require('active-win');
+const fs = require('fs').promises;
+const path = require('path')
 
 
-function createWindow(): void {
+const createWindow = async() => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 350,
@@ -16,7 +17,7 @@ function createWindow(): void {
     show: false,
     // resizable: false,
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
+    ...(process.platform === 'linux' ? {icon} : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -29,7 +30,7 @@ function createWindow(): void {
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
-    return { action: 'deny' }
+    return {action: 'deny'}
   })
 
   // HMR for renderer base on electron-vite cli.
@@ -39,6 +40,67 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  // 오늘 날짜 확인
+  const date = new Date();
+  const dateStr = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  // 데이터 불러오기
+  const record = {};
+  // process.env['ELECTRON_RENDERER_URL']+`/${dateStr}.txt`
+
+  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    try {
+      const loadedData = await fs.readFile(join(__dirname, '../renderer/2023-11-24.txt'))
+      console.log(loadedData.toString())
+      record[dateStr] = JSON.parse(loadedData.toString());
+    } catch {
+      console.log(__dirname, `${dateStr}.txt2`)
+      console.log(join(__dirname, '../renderer/2023-11-24.txt'));
+      // mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+      console.log('no file!!')
+    }
+
+  } else {
+    try {
+      const loadedData = await fs.readFile(path.join(__dirname, `${dateStr}.txt`));
+      console.log(loadedData.toString())
+      record[dateStr] = JSON.parse(loadedData.toString());
+    } catch {
+      console.log(__dirname, `${dateStr}.txt3`)
+      // mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+      console.log('no file!!')
+    }
+  }
+
+
+
+
+  //1초마다 실행
+  setInterval(async () => {
+    // 12시 넘어서 날짜 바뀔 수 있으므로 setInterval 안에서 다시 날짜 로딩
+    const date = new Date();
+    const dateStr = `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
+    //액티브 윈도우 조회
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const data = await activeWindow({})
+    if(!record[dateStr]){
+      record[dateStr] = {};
+    }
+
+    // 없으면 1초로 시작, 있으면 1초 더하기
+    if(record[dateStr][data?.owner?.name]){
+      record[dateStr][data?.owner?.name] += 1;
+    } else{
+      record[dateStr][data?.owner?.name] = 1
+    }
+    // html로 데이터 보내기
+    // mac: screenRecordingPermission
+    mainWindow.webContents.send('updateNumber', record[dateStr]);
+    // 데이터 저장
+    await fs.writeFile(path.join(__dirname, `${dateStr}.txt`));
+  }, 1000)
+
 }
 
 // This method will be called when Electron has finished
@@ -72,15 +134,7 @@ app.whenReady().then(() => {
       buttons: ['확인']
     });
   });
-// 메인 프로세스에서
-  ipcMain.handle('google-login', async (event, email, password) => {
-    try {
-      const result = await googleLogin(email, password);
-      return result;
-    } catch (error) {
-      console.error(error);
-    }
-  });
+
 
   ipcMain.handle('capture-request', async (event, searchQuery) => {
     try {

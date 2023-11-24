@@ -1,0 +1,1 @@
+{"Electron":3,"IntelliJ IDEA":120,"네이버 웨일":43}
